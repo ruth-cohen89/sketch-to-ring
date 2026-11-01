@@ -1,0 +1,33 @@
+﻿services:
+  mongo:
+    image: mongo:7
+    command: ["--wiredTigerCacheSizeGB", "0.25", "--bind_ip_all"]
+    ports: ["127.0.0.1:27018:27017"]
+    volumes: [mongo-data:/data/db]
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    ports: ["127.0.0.1:6380:6379"]
+    restart: unless-stopped
+
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    ports: ["127.0.0.1:5672:5672", "127.0.0.1:15672:15672"]
+    volumes: [rabbit-data:/var/lib/rabbitmq]
+    restart: unless-stopped
+
+  seaweedfs:
+    image: chrislusf/seaweedfs:latest
+    command: ["server", "-dir=/data", "-s3", "-s3.port=8333", "-s3.config=/etc/seaweedfs/s3.json", "-volume.max=30", "-master.volumeSizeLimitMB=64", "-ip=127.0.0.1", "-ip.bind=0.0.0.0"]
+    # 8333 = S3 API (signed requests). 8888 = Filer HTTP, no auth: local dev only, bound to 127.0.0.1.
+    ports: ["127.0.0.1:8333:8333", "127.0.0.1:8888:8888"]
+    volumes:
+      - seaweed-data:/data
+      - ./infra/seaweed-s3.json:/etc/seaweedfs/s3.json:ro
+    restart: unless-stopped
+
+volumes:
+  mongo-data:
+  rabbit-data:
+  seaweed-data:
